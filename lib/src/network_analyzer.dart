@@ -1,7 +1,7 @@
 /*
  * ping_discover_network
  * Created by Andrey Ushakov
- * 
+ *
  * See LICENSE for distribution and usage details.
  */
 
@@ -75,24 +75,25 @@ class NetworkAnalyzer {
     final futures = <Future<Socket>>[];
     for (int i = 1; i < 256; ++i) {
       final host = '$subnet.$i';
-      final Future<Socket> f = _ping(host, port, timeout);
-      futures.add(f);
-      f.then((socket) {
-        socket.destroy();
-        out.sink.add(NetworkAddress(host, true));
-      }).catchError((dynamic e) {
-        if (!(e is SocketException)) {
-          throw e;
-        }
+      try {
+        final Future<Socket> f = _ping(host, port, timeout);
+        futures.add(f);
+        f.then((socket) {
+          socket.destroy();
+          out.sink.add(NetworkAddress(host, true));
+        }).catchError((dynamic e) {
+          if (!(e is SocketException)) {
+            throw e;
+          }
 
-        // Check if connection timed out or we got one of predefined errors
-        if (e.osError == null || _errorCodes.contains(e.osError!.errorCode)) {
-          out.sink.add(NetworkAddress(host, false));
-        } else {
-          // Error 23,24: Too many open files in system
-          throw e;
-        }
-      });
+          // Check if connection timed out or we got one of predefined errors
+          if (e.osError == null || _errorCodes.contains(e.osError!.errorCode)) {
+            out.sink.add(NetworkAddress(host, false));
+          } else {
+            // Error 23,24: Too many open files in system
+          }
+        });
+      } catch (e) {}
     }
 
     Future.wait<Socket>(futures)
